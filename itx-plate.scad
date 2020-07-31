@@ -97,16 +97,68 @@ module 2d_40mm_fan_template() {
         difference() {
             square([40, 40]);
             union () {
-                translate([-1, -1]) square([9, 9]);
-                translate([-1, 32]) square([9, 9]);
-                translate([32, -1]) square([9, 9]);
-                translate([32, 32]) square([9, 9]);
+                translate([-1, -1]) rounded_square([9, 9], 2, bl = false, br = false, tr = false);
+                translate([-1, 32]) rounded_square([9, 9], 2, bl = false, tl = false, tr = false);
+                translate([32, -1]) rounded_square([9, 9], 2, bl = false, br = false, tl = false);
+                translate([32, 32]) rounded_square([9, 9], 2, br = false, tl = false, tr = false);
             }
         }
         translate([4, 4]) circle(d = 3.5);
         translate([4, 36]) circle(d = 3.5);
         translate([36, 4]) circle(d = 3.5);
         translate([36, 36]) circle(d = 3.5);
+    }
+}
+
+module rounded_square(size, radius = 1, bl = true, br = true, tl = true,  tr = true, center = false) {
+    corner_size = [radius, radius];
+    cutout_size = corner_size + [1, 1];
+
+    union() {
+        difference() {
+            square(size, center = false);
+            union() {
+                if (bl) {
+                    translate([-1, -1]) 
+                        square(corner_size + [1, 1]);
+                }
+
+                if (br) {
+                    translate([size.x - radius, -1]) 
+                        square(corner_size + [1, 1]);
+                }
+
+                if (tl) {
+                    translate([size.x - radius, size.y - radius]) 
+                        square(corner_size + [1, 1]);
+                }
+
+                if (tr) {
+                    translate([-1, size.y - radius]) 
+                        square(corner_size + [1, 1]);
+                }
+            }
+        }
+
+        if (bl) {
+            translate([radius, radius]) 
+                circle(r = radius);
+        }
+
+        if (br) {
+            translate([size.x - radius, radius]) 
+                circle(r = radius);
+        }
+
+        if (tl) {
+            translate([size.x - radius, size.y - radius]) 
+                circle(r = radius);
+        }
+
+        if (tr) {
+            translate([radius, size.y - radius]) 
+                circle(r = radius);
+        }
     }
 }
 
@@ -240,3 +292,5 @@ right_plate(case_dimensions, side_thickness/*, color*/);
 rear_plate(case_dimensions, side_thickness, color);
 front_plate(case_dimensions, side_thickness, color);
 base_plate(case_dimensions, base_thickness, side_thickness, draw_mb = true);
+
+// rounded_square([100, 100], 20, tr = true, tl = false, br = false, bl = false);
