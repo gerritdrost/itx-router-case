@@ -1,46 +1,6 @@
-module itx_board(color = "#33aa11") {
-    color(color)
-        linear_extrude(height = 1.6)
-            difference() {
-                square(170);
-                2d_itx_screwholes(2.5);
-            }
-}
-
-module itx_standoffs(height, color = "#b3a436") {
-    color(color)
-        linear_extrude(height = height)
-            2d_itx_screwholes(2.5, 6);
-}
-
-// Creates a union of circles at the Mini-ITX screwhole coordinates
-module 2d_itx_screwholes(screwhole_diameter, sides = 0) {
-    union() {
-        // H
-        translate([6.35, 4.9]) circle(d = screwhole_diameter, $fn = sides);
-        
-        // C
-        translate([6.35, 159.84]) circle(d = screwhole_diameter, $fn = sides);
-        
-        // F
-        translate([163.65, 136.98]) circle(d = screwhole_diameter, $fn = sides);
-        
-        // J
-        translate([163.65, 4.9]) circle(d = screwhole_diameter, $fn = sides);
-    }
-}
-
-module 2d_itx_backplate(border, screwhole_diameter) {    
-    difference() {
-        square(
-            size = 170 + (border * 2), 
-            center = false
-        );
-        
-        translate([border, border])
-            2d_itx_screwholes(screwhole_diameter);
-    }
-}
+use <features/itx.scad>;
+use <features/2d_geometries.scad>;
+use <features/case_fans.scad>;
 
 module base_plate(
     case_dimensions, 
@@ -83,86 +43,36 @@ module base_plate(
     }
 }
 
-module left_plate(case_dimensions, thickness, color = "#ffff00") {
+module left_plate(
+    case_dimensions, 
+    wall_thickness,
+    hole_padding,
+    hole_diameter,
+    hole_sides = 0,
+    color = "#ffff00"
+) {
     dimensions = [case_dimensions.y, case_dimensions.z];
 
-    color(color) 
+    color(color)
         rotate([90, 0, 90])
-            linear_extrude(height = thickness)
-                2d_perforated_square(dimensions, [5, 5], 2, 4, 5);
+            linear_extrude(height = wall_thickness)
+                2d_perforated_square(
+                    dimensions = dimensions, 
+                    margins = [5, 5],
+                    c_padding = hole_padding, 
+                    c_diameter = hole_diameter, 
+                    circle_sides = hole_sides
+                );
 }
 
-module 2d_40mm_fan_template() {
-    union () {
-        difference() {
-            square([40, 40]);
-            union () {
-                translate([-1, -1]) rounded_square([9, 9], 2, bl = false, br = false, tr = false);
-                translate([-1, 32]) rounded_square([9, 9], 2, bl = false, tl = false, tr = false);
-                translate([32, -1]) rounded_square([9, 9], 2, bl = false, br = false, tl = false);
-                translate([32, 32]) rounded_square([9, 9], 2, br = false, tl = false, tr = false);
-            }
-        }
-        translate([4, 4]) circle(d = 3.5);
-        translate([4, 36]) circle(d = 3.5);
-        translate([36, 4]) circle(d = 3.5);
-        translate([36, 36]) circle(d = 3.5);
-    }
-}
-
-module rounded_square(size, radius = 1, bl = true, br = true, tl = true,  tr = true, center = false) {
-    corner_size = [radius, radius];
-    cutout_size = corner_size + [1, 1];
-
-    union() {
-        difference() {
-            square(size, center = false);
-            union() {
-                if (bl) {
-                    translate([-1, -1]) 
-                        square(corner_size + [1, 1]);
-                }
-
-                if (br) {
-                    translate([size.x - radius, -1]) 
-                        square(corner_size + [1, 1]);
-                }
-
-                if (tl) {
-                    translate([size.x - radius, size.y - radius]) 
-                        square(corner_size + [1, 1]);
-                }
-
-                if (tr) {
-                    translate([-1, size.y - radius]) 
-                        square(corner_size + [1, 1]);
-                }
-            }
-        }
-
-        if (bl) {
-            translate([radius, radius]) 
-                circle(r = radius);
-        }
-
-        if (br) {
-            translate([size.x - radius, radius]) 
-                circle(r = radius);
-        }
-
-        if (tl) {
-            translate([size.x - radius, size.y - radius]) 
-                circle(r = radius);
-        }
-
-        if (tr) {
-            translate([radius, size.y - radius]) 
-                circle(r = radius);
-        }
-    }
-}
-
-module right_plate(case_dimensions, thickness, color = "#ff0000") {
+module right_plate(
+    case_dimensions, 
+    wall_thickness, 
+    hole_padding,
+    hole_diameter,
+    hole_sides = 0,
+    color = "#ff0000"
+) {
     dimensions = [case_dimensions.y, case_dimensions.z];
 
     fan_margin = [10, 5];
@@ -183,18 +93,22 @@ module right_plate(case_dimensions, thickness, color = "#ff0000") {
         (dimensions.y / 2) - (fan_area.y / 2)
     ];
 
-    echo("fan", fan_offset);
-
     color(color) 
-        translate([case_dimensions.x - thickness, 0])
+        translate([case_dimensions.x - wall_thickness, 0])
             rotate([90, 0, 90])
-            linear_extrude(height = thickness)
+            linear_extrude(height = wall_thickness)
                     union () {
                         difference() {
                             square(dimensions);
 
                             translate(perforation_margin) {
-                                2d_circle_grid(perforation_area, 2, 4, 5);
+                                // dimensions, c_padding, c_diameter, circle_sides
+                                2d_circle_grid(
+                                    dimensions = perforation_area, 
+                                    c_padding = hole_padding, 
+                                    c_diameter = hole_diameter, 
+                                    circle_sides = hole_sides
+                                );
                             }
 
                             translate(fan_offset) {
@@ -204,14 +118,27 @@ module right_plate(case_dimensions, thickness, color = "#ff0000") {
                     }
 }
 
-module rear_plate(case_dimensions, thickness, color = "#0000ff") {
-    dimensions = [case_dimensions.x - (thickness * 2), case_dimensions.z];
+module rear_plate(
+    case_dimensions, 
+    wall_thickness, 
+    hole_padding,
+    hole_diameter,
+    hole_sides = 0,
+    color = "#0000ff"
+) {
+    dimensions = [case_dimensions.x - (wall_thickness * 2), case_dimensions.z];
 
     color(color)
-        translate([thickness, case_dimensions.y, 0])
+        translate([wall_thickness, case_dimensions.y, 0])
             rotate([90, 0, 0])
-                linear_extrude(height = thickness)
-                    2d_perforated_square(dimensions, [5, 5], 2, 4, 5);
+                linear_extrude(height = wall_thickness)
+                    2d_perforated_square(
+                        dimensions = dimensions, 
+                        margins = [5, 5],
+                        c_padding = hole_padding, 
+                        c_diameter = hole_diameter, 
+                        circle_sides = hole_sides
+                    );
 }
 
 module front_plate(case_dimensions, thickness, color = "#00ffff") {
@@ -224,57 +151,6 @@ module front_plate(case_dimensions, thickness, color = "#00ffff") {
                     square(dimensions);
 }
 
-module 2d_circle_grid(dimensions, c_padding, c_diameter, circle_sides = 0) {
-    c_radius = c_diameter / 2;
-
-    function fit_circles(width) = floor((width - c_diameter) / (c_diameter + c_padding) + 1);
-    function circles_width(n) = n * c_diameter + (n - 1) * c_padding;
-
-    c_num = [
-        fit_circles(dimensions.x), 
-        fit_circles(dimensions.y)
-    ];
-
-    c_area = [
-        circles_width(c_num.x), 
-        circles_width(c_num.y)
-    ];
-
-    perforated_offset = [
-        c_radius + (dimensions.x / 2) - (c_area.x / 2), 
-        c_radius + (dimensions.y / 2) - (c_area.y / 2)
-    ];
-    
-    translate(perforated_offset) {
-        union() {
-            for (y = [0 : c_num.y - 1]) {
-                for (x = [0 : c_num.x - 1]) {
-                    circle_offset = [
-                        x * (c_diameter + c_padding), 
-                        y * (c_diameter + c_padding)
-                    ];
-
-                    translate(circle_offset)
-                        circle(d = c_diameter, $fn = circle_sides);
-                }
-            }
-        }
-    }
-}
-
-module 2d_perforated_square(dimensions, margins, c_padding, c_diameter, circle_sides = 0) {
-    margin_boundaries = [
-        dimensions.x - 2 * margins.x, 
-        dimensions.y - 2 * margins.y
-    ];
-    
-    difference() {
-        square(dimensions);
-        translate(margins)
-            2d_circle_grid(margin_boundaries, c_padding, c_diameter, circle_sides);
-    }
-}
-
 // Outer dimensions of the case
 case_dimensions = [210, 190, 60];
 
@@ -284,13 +160,41 @@ base_thickness = 4;
 // Thickness of the side plates
 side_thickness = 2;
 
+hole_padding = 3;
+hole_diameter = 5;
+hole_sides = 0;
+
 color = "#666666";
 
 // Draw all components
-left_plate(case_dimensions, side_thickness, color);
-right_plate(case_dimensions, side_thickness/*, color*/);
-rear_plate(case_dimensions, side_thickness, color);
-front_plate(case_dimensions, side_thickness, color);
+left_plate(
+    case_dimensions, 
+    side_thickness, 
+    hole_padding = hole_padding,
+    hole_diameter = hole_diameter,
+    hole_sides = hole_sides,
+    color = color
+);
+right_plate(
+    case_dimensions, 
+    side_thickness, 
+    hole_padding = hole_padding,
+    hole_diameter = hole_diameter,
+    hole_sides = hole_sides,
+    color = "red"
+);
+
+rear_plate(
+    case_dimensions, 
+    side_thickness,
+    hole_padding = hole_padding,
+    hole_diameter = hole_diameter,
+    hole_sides = hole_sides,
+    color = color
+);
+
+front_plate(case_dimensions, side_thickness, color = color);
+
 base_plate(case_dimensions, base_thickness, side_thickness, draw_mb = true);
 
 // rounded_square([100, 100], 20, tr = true, tl = false, br = false, bl = false);
