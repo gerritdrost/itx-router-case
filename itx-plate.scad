@@ -102,7 +102,6 @@ module right_plate(
                             square(dimensions);
 
                             translate(perforation_margin) {
-                                // dimensions, c_padding, c_diameter, circle_sides
                                 2d_circle_grid(
                                     dimensions = perforation_area, 
                                     c_padding = hole_padding, 
@@ -141,14 +140,27 @@ module rear_plate(
                     );
 }
 
-module front_plate(case_dimensions, thickness, color = "#00ffff") {
-    dimensions = [case_dimensions.x - (side_thickness * 2), case_dimensions.z];
+module front_plate(
+    case_dimensions,
+    wall_thickness,
+    hole_padding,
+    hole_diameter,
+    hole_sides = 0,
+    color = "#00ffff"
+) {
+    dimensions = [case_dimensions.x - (wall_thickness * 2), case_dimensions.z];
 
     color(color)
-        translate([side_thickness, side_thickness, 0])
+        translate([wall_thickness, wall_thickness, 0])
             rotate([90, 0, 0])
-                linear_extrude(height = thickness)
-                    square(dimensions);
+                linear_extrude(height = wall_thickness)
+                2d_perforated_square(
+                    dimensions = dimensions, 
+                    margins = [5, 5],
+                    c_padding = hole_padding, 
+                    c_diameter = hole_diameter, 
+                    circle_sides = hole_sides
+                );
 }
 
 // Outer dimensions of the case
@@ -193,8 +205,12 @@ rear_plate(
     color = color
 );
 
-front_plate(case_dimensions, side_thickness, color = color);
-
+front_plate(
+    case_dimensions, 
+    side_thickness,
+    hole_padding = hole_padding,
+    hole_diameter = hole_diameter,
+    hole_sides = hole_sides, 
+    color = color
+);
 base_plate(case_dimensions, base_thickness, side_thickness, draw_mb = true);
-
-// rounded_square([100, 100], 20, tr = true, tl = false, br = false, bl = false);
