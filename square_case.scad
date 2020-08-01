@@ -187,6 +187,7 @@ left_plate(
     hole_sides = hole_sides,
     color = color
 );
+
 right_plate(
     case_dimensions, 
     side_thickness, 
