@@ -1,6 +1,6 @@
-use <features/itx.scad>;
-use <features/2d_geometries.scad>;
-use <features/case_fans.scad>;
+use <lib/itx.scad>;
+use <lib/2d_geometries.scad>;
+use <lib/case_fans.scad>;
 
 module rounded_block(dimensions, corner_radius) {
     linear_extrude(height = dimensions.z)
