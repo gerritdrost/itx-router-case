@@ -40,6 +40,7 @@ module walls(
     side_thickness,
     vertical_margin,
     corner_radius,
+    keystone_panel_screwhole_diameter,
     fan_area_margin,
     hole_area_margin,
     hole_padding,
@@ -112,6 +113,7 @@ module walls(
                     translate(fb_offset)
                         front_wall(
                             usable_area = fb_area,
+                            keystone_panel_screwhole_diameter = keystone_panel_screwhole_diameter,
                             hole_area_margin = hole_area_margin,
                             hole_padding = hole_padding,
                             hole_diameter = hole_diameter,
@@ -141,21 +143,65 @@ module left_wall(
 
 module front_wall(
     usable_area,
+    keystone_panel_screwhole_diameter,
     hole_area_margin,
     hole_padding,
     hole_diameter,
     hole_sides
 ) {
-    translate(hole_area_margin)
-        2d_circle_grid(
-            dimensions = [
-                usable_area.x - (hole_area_margin.x * 2), 
-                usable_area.y - (hole_area_margin.y * 2)
-            ],
-            c_padding = hole_padding,
-            c_diameter = hole_diameter,
-            circle_sides = hole_sides
-        );
+    keystone_panel_area = [132, 30];
+    keystone_panel_offset = [
+        (usable_area.x / 2) - (keystone_panel_area.x / 2),
+        usable_area.y - keystone_panel_area.y - hole_area_margin.y
+    ];
+
+    hole_area = [
+        (usable_area.x - keystone_panel_area.x - (hole_area_margin.x * 4)) / 2,
+        usable_area.y - (hole_area_margin.y * 2)
+    ];
+
+    union() {
+        translate(hole_area_margin)
+            2d_circle_grid(
+                dimensions = hole_area,
+                c_padding = hole_padding,
+                c_diameter = hole_diameter,
+                circle_sides = hole_sides
+            );
+
+        translate([
+            hole_area.x + keystone_panel_area.x + (hole_area_margin.x * 3),
+            hole_area_margin.y
+        ])
+            2d_circle_grid(
+                dimensions = hole_area,
+                c_padding = hole_padding,
+                c_diameter = hole_diameter,
+                circle_sides = hole_sides
+            );
+
+        translate(keystone_panel_offset)
+            2d_keystone_panel(screwhole_diameter = keystone_panel_screwhole_diameter);
+    }
+}
+
+module 2d_keystone_panel(screwhole_diameter) {
+    area = [132, 30];
+    hole_area = [110, 30];
+    hole_offset = [11, 0];
+    screw_offset_1 = [6, 15];
+    screw_offset_2 = [126, 15];
+
+    union () {
+        translate(screw_offset_1)
+            circle(d = screwhole_diameter);
+
+        translate(screw_offset_2)
+            circle(d = screwhole_diameter);
+
+        translate(hole_offset)
+            square(hole_area);
+    }
 }
 
 module rear_wall(
@@ -213,7 +259,7 @@ module right_wall(
 }
 
 // Outer dimensions of the case
-case_dimensions = [210, 190, 60];
+case_dimensions = [210, 190, 80];
 
 // Thickness of the base plate
 base_thickness = 2;
@@ -224,12 +270,14 @@ side_thickness = 2;
 // Area to leave untouched at the top/bottom of all walls
 vertical_margin = 4;
 
-hole_padding = 3;
+hole_padding = 4;
 hole_diameter = 5;
 hole_sides = 0;
-hole_area_margin = [5, 5];
+hole_area_margin = [4, 4];
 
-fan_area_margin = [5, 5];
+keystone_panel_screwhole_diameter = 3;
+
+fan_area_margin = [4, 4];
 
 color = "#666666";
 
@@ -250,6 +298,7 @@ color(color)
             side_thickness = side_thickness, 
             vertical_margin = vertical_margin,
             corner_radius = corner_radius,
+            keystone_panel_screwhole_diameter = keystone_panel_screwhole_diameter,
             fan_area_margin = fan_area_margin,
             hole_area_margin = hole_area_margin,
             hole_padding = hole_padding,
