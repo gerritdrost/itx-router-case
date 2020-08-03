@@ -34,7 +34,7 @@ module enclosure(case_dimensions, base_thickness, side_thickness, corner_radius)
     }
 }
 
-module left_wall(
+module walls(
     case_dimensions,
     base_thickness,
     side_thickness,
@@ -46,57 +46,131 @@ module left_wall(
     hole_diameter,
     hole_sides
 ) {
-    dimensions = [
-        case_dimensions.y - (corner_radius * 2) - (hole_area_margin.x * 2), 
-        case_dimensions.z - base_thickness - (hole_area_margin.y * 2)
+    lr_area = [
+        case_dimensions.y - (corner_radius * 2), 
+        case_dimensions.z - base_thickness - (vertical_margin * 2)
     ];
 
-    2d_offset = [
-        corner_radius + hole_area_margin.x,
-        base_thickness + hole_area_margin.y
+    lr_offset = [
+        corner_radius,
+        base_thickness + vertical_margin
+    ];
+    
+    fb_area = [
+        case_dimensions.x - (corner_radius * 2), 
+        case_dimensions.z - base_thickness - (vertical_margin * 2)
     ];
 
-    translate([-1,0,0])
-        rotate([90, 0, 90])
-            linear_extrude(height = side_thickness + 2, convexity = 2) {
-                usable_area = [
-                    case_dimensions.y - (corner_radius * 2), 
-                    case_dimensions.z - base_thickness - (vertical_margin * 2)
-                ];
+    fb_offset = [
+        corner_radius,
+        base_thickness + vertical_margin
+    ];
 
-                usable_area_offset = [
-                    corner_radius,
-                    base_thickness + vertical_margin
-                ];
+    union() {
+        translate([-1,0,0])
+            rotate([90, 0, 90])
+                linear_extrude(height = side_thickness + 2)
+                    translate(lr_offset)
+                        left_wall(
+                            usable_area = lr_area,
+                            hole_area_margin = hole_area_margin,
+                            hole_padding = hole_padding,
+                            hole_diameter = hole_diameter,
+                            hole_sides = hole_sides
+                        );
+        
 
-                translate(usable_area_offset)
-                    2d_left_wall_holes(
-                        usable_area = usable_area,
-                        fan_area_margin = fan_area_margin,
-                        hole_area_margin = hole_area_margin,
-                        hole_padding = hole_padding,
-                        hole_diameter = hole_diameter,
-                        hole_sides = hole_sides
-                    );
-            }
+
+        translate([case_dimensions.x - side_thickness - 1,0,0])
+            rotate([90, 0, 90])
+                linear_extrude(height = side_thickness + 2)
+                    translate(lr_offset)
+                        right_wall(
+                            usable_area = lr_area,
+                            fan_area_margin = fan_area_margin,
+                            hole_area_margin = hole_area_margin,
+                            hole_padding = hole_padding,
+                            hole_diameter = hole_diameter,
+                            hole_sides = hole_sides
+                        );
+
+        translate([0, case_dimensions.y + 1, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = side_thickness + 2)
+                    translate(fb_offset)
+                        rear_wall(
+                            usable_area = fb_area,
+                            hole_area_margin = hole_area_margin,
+                            hole_padding = hole_padding,
+                            hole_diameter = hole_diameter,
+                            hole_sides = hole_sides
+                        );
+
+        translate([0, 1 + side_thickness, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = side_thickness + 2)
+                    translate(fb_offset)
+                        front_wall(
+                            usable_area = fb_area,
+                            hole_area_margin = hole_area_margin,
+                            hole_padding = hole_padding,
+                            hole_diameter = hole_diameter,
+                            hole_sides = hole_sides
+                        );
+    }
 }
 
-module 2d_left_wall_holes(
+module left_wall(
     usable_area,
-    fan_area_margin,
     hole_area_margin,
     hole_padding,
     hole_diameter,
     hole_sides
 ) {
-    hole_area = [
-        usable_area.x - (hole_area_margin.x * 2),
-        usable_area.y - (hole_area_margin.y * 2)
-    ];
-
     translate(hole_area_margin)
         2d_circle_grid(
-            dimensions = [hole_area.x, hole_area.y],
+            dimensions = [
+                usable_area.x - (hole_area_margin.x * 2), 
+                usable_area.y - (hole_area_margin.y * 2)
+            ],
+            c_padding = hole_padding,
+            c_diameter = hole_diameter,
+            circle_sides = hole_sides
+        );
+}
+
+module front_wall(
+    usable_area,
+    hole_area_margin,
+    hole_padding,
+    hole_diameter,
+    hole_sides
+) {
+    translate(hole_area_margin)
+        2d_circle_grid(
+            dimensions = [
+                usable_area.x - (hole_area_margin.x * 2), 
+                usable_area.y - (hole_area_margin.y * 2)
+            ],
+            c_padding = hole_padding,
+            c_diameter = hole_diameter,
+            circle_sides = hole_sides
+        );
+}
+
+module rear_wall(
+    usable_area,
+    hole_area_margin,
+    hole_padding,
+    hole_diameter,
+    hole_sides
+) {
+    translate(hole_area_margin)
+        2d_circle_grid(
+            dimensions = [
+                usable_area.x - (hole_area_margin.x * 2), 
+                usable_area.y - (hole_area_margin.y * 2)
+            ],
             c_padding = hole_padding,
             c_diameter = hole_diameter,
             circle_sides = hole_sides
@@ -104,45 +178,6 @@ module 2d_left_wall_holes(
 }
 
 module right_wall(
-    case_dimensions,
-    base_thickness,
-    side_thickness,
-    vertical_margin,
-    corner_radius,
-    fan_area_margin,
-    hole_area_margin,
-    hole_padding,
-    hole_diameter,
-    hole_sides
-) {
-    translate([case_dimensions.x - side_thickness - 1,0,0]) {
-        rotate([90, 0, 90]) {
-            linear_extrude(height = side_thickness + 2, convexity = 2) {
-                usable_area = [
-                    case_dimensions.y - (corner_radius * 2), 
-                    case_dimensions.z - base_thickness - (vertical_margin * 2)
-                ];
-
-                usable_area_offset = [
-                    corner_radius,
-                    base_thickness + vertical_margin
-                ];
-
-                translate(usable_area_offset)
-                    2d_right_wall_holes(
-                        usable_area = usable_area,
-                        fan_area_margin = fan_area_margin,
-                        hole_area_margin = hole_area_margin,
-                        hole_padding = hole_padding,
-                        hole_diameter = hole_diameter,
-                        hole_sides = hole_sides
-                    );
-            }
-        }
-    }
-}
-
-module 2d_right_wall_holes(
     usable_area,
     fan_area_margin,
     hole_area_margin,
@@ -209,20 +244,7 @@ color(color)
             corner_radius = corner_radius
         );
 
-        left_wall(
-            case_dimensions = case_dimensions,
-            base_thickness = base_thickness, 
-            side_thickness = side_thickness, 
-            vertical_margin = vertical_margin,
-            corner_radius = corner_radius,
-            fan_area_margin = fan_area_margin,
-            hole_area_margin = hole_area_margin,
-            hole_padding = hole_padding,
-            hole_diameter = hole_diameter,
-            hole_sides = hole_sides
-        );
-
-        right_wall(
+        walls(
             case_dimensions = case_dimensions,
             base_thickness = base_thickness, 
             side_thickness = side_thickness, 
