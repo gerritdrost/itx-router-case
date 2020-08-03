@@ -2,46 +2,35 @@ use <features/itx.scad>;
 use <features/2d_geometries.scad>;
 use <features/case_fans.scad>;
 
-module enclosure_base(dimensions, corner_radius, thickness) {
-    linear_extrude(height = thickness)
+module rounded_block(dimensions, corner_radius) {
+    linear_extrude(height = dimensions.z)
         rounded_square(
-            size = dimensions, 
+            size = [dimensions.x, dimensions.y], 
             radius = corner_radius
         );
 }
 
-module enclosure_walls(dimensions, height, thickness, corner_radius) {
-    linear_extrude(height = height)
-        difference() {
-            rounded_square(
-                size = dimensions, 
-                radius = corner_radius
-            );
-            translate([thickness, thickness])
-                rounded_square(
-                    size = [
-                        dimensions.x - (side_thickness * 2),
-                        dimensions.y - (side_thickness * 2)
-                    ], 
-                    radius = corner_radius - thickness
-                );
-        }
-}
-
 module enclosure(case_dimensions, base_thickness, side_thickness, corner_radius) {
-    union() {
-        enclosure_base(
-            dimensions = [case_dimensions.x, case_dimensions.y],
-            corner_radius = corner_radius,
-            thickness = base_thickness
+    difference() {
+        rounded_block(
+            dimensions = case_dimensions,
+            corner_radius = corner_radius
         );
 
-        enclosure_walls(
-            dimensions = [case_dimensions.x, case_dimensions.y],
-            height = case_dimensions.z,
-            corner_radius = corner_radius,
-            thickness = side_thickness
-        );
+        translate([
+            side_thickness, 
+            side_thickness, 
+            base_thickness
+        ]) {
+            rounded_block(
+                dimensions = [
+                    case_dimensions.x - (side_thickness * 2), 
+                    case_dimensions.y - (side_thickness * 2), 
+                    case_dimensions.z
+                ],
+                corner_radius = corner_radius - side_thickness
+            );
+        }
     }
 }
 
