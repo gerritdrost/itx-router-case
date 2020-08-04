@@ -34,6 +34,25 @@ module enclosure(case_dimensions, base_thickness, side_thickness, corner_radius)
     }
 }
 
+module base(case_dimensions, base_thickness, side_thickness, corner_radius, mb_margin) {
+    inner_radius = corner_radius - side_thickness;
+    usable_area = [
+        case_dimensions.x - (inner_radius * 2),
+        case_dimensions.y - (inner_radius * 2)
+    ];
+
+    translate([inner_radius, inner_radius, -1]) {
+        linear_extrude(height = base_thickness + 2) {
+            translate(mb_margin + [0, 170])
+                rotate(270)
+                    for  (screwhole_position = itx_screwhole_positions()) {
+                        translate(screwhole_position) 
+                            circle(d = 3, $fn = 24);
+                    }
+        }
+    }
+}
+
 module walls(
     case_dimensions,
     base_thickness,
@@ -259,10 +278,13 @@ module right_wall(
 }
 
 // Outer dimensions of the case
-case_dimensions = [210, 190, 80];
+//  max width: 210
+//  max depth: 190
+// max height: 110
+case_dimensions = [210, 190, 100];
 
 // Thickness of the base plate
-base_thickness = 2;
+base_thickness = 4;
 
 // Thickness of the side plates
 side_thickness = 2;
@@ -279,17 +301,28 @@ keystone_panel_screwhole_diameter = 3;
 
 fan_area_margin = [4, 4];
 
+mb_margin = [2, 5];
+mb_standoff_height = 11;
+
 color = "#666666";
 
-corner_radius = 8;
+corner_radius = 7;
 
-color(color)
+color(color) {
     difference () {
         enclosure(
             case_dimensions = case_dimensions, 
             base_thickness = base_thickness, 
             side_thickness = side_thickness, 
             corner_radius = corner_radius
+        );
+
+        base(
+            case_dimensions = case_dimensions, 
+            base_thickness = base_thickness, 
+            side_thickness = side_thickness, 
+            corner_radius = corner_radius,
+            mb_margin = mb_margin
         );
 
         walls(
@@ -306,3 +339,24 @@ color(color)
             hole_sides = hole_sides
         );
     }
+}
+
+if ($preview) {
+    inner_radius = corner_radius - side_thickness;
+
+    translate([
+        inner_radius + mb_margin.x, 
+        inner_radius + mb_margin.y, 
+        base_thickness
+    ])
+    translate([0, 170, 0])
+        rotate(270)
+            union() {
+                translate([0, 0, mb_standoff_height])
+                    itx_board();
+
+                m3_itx_standoffs(standoff_height = mb_standoff_height, screw_length = 6);
+            }
+}
+
+
