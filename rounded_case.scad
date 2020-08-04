@@ -133,6 +133,7 @@ module walls(
                         front_wall(
                             usable_area = fb_area,
                             keystone_panel_screwhole_diameter = keystone_panel_screwhole_diameter,
+                            fan_area_margin = fan_area_margin,
                             hole_area_margin = hole_area_margin,
                             hole_padding = hole_padding,
                             hole_diameter = hole_diameter,
@@ -163,6 +164,7 @@ module left_wall(
 module front_wall(
     usable_area,
     keystone_panel_screwhole_diameter,
+    fan_area_margin,
     hole_area_margin,
     hole_padding,
     hole_diameter,
@@ -170,28 +172,30 @@ module front_wall(
 ) {
     keystone_panel_area = [132, 30];
     keystone_panel_offset = [
-        (usable_area.x / 2) - (keystone_panel_area.x / 2),
+        usable_area.x - keystone_panel_area.x - hole_area_margin.x,
         usable_area.y - keystone_panel_area.y - hole_area_margin.y
     ];
 
     hole_area = [
-        (usable_area.x - keystone_panel_area.x - (hole_area_margin.x * 4)) / 2,
-        usable_area.y - (hole_area_margin.y * 2)
+        usable_area.x - (hole_area_margin.x * 2),
+        min(
+            // Keystone panel
+            usable_area.y - (hole_area_margin.y * 4) - keystone_panel_area.y,
+            // Fan hole
+            usable_area.y - 40 - (fan_area_margin.y * 2) - (hole_area_margin.y * 2)
+        )
+    ];
+
+    fan_area_offset = [
+        fan_area_margin.x,
+        usable_area.y - 40 - fan_area_margin.y
     ];
 
     union() {
+        translate(fan_area_offset)
+            2d_40mm_fan_template();
+            
         translate(hole_area_margin)
-            2d_circle_grid(
-                dimensions = hole_area,
-                c_padding = hole_padding,
-                c_diameter = hole_diameter,
-                circle_sides = hole_sides
-            );
-
-        translate([
-            hole_area.x + keystone_panel_area.x + (hole_area_margin.x * 3),
-            hole_area_margin.y
-        ])
             2d_circle_grid(
                 dimensions = hole_area,
                 c_padding = hole_padding,
@@ -250,31 +254,16 @@ module right_wall(
     hole_diameter,
     hole_sides
 ) {
-    fan_area = [40, 40];
-
-    fan_area_offset = [
-        usable_area.x - (fan_area.x + fan_area_margin.x),
-        (usable_area.y / 2) - (fan_area.y / 2)
-    ];
-
-    hole_area = [
-        usable_area.x - (hole_area_margin.x * 2) - fan_area.x - (fan_area_margin.x * 2),
-        usable_area.y - (hole_area_margin.y * 2)
-    ];
-
-
-    union() {
-        translate(hole_area_margin)
-            2d_circle_grid(
-                dimensions = [hole_area.x, hole_area.y],
-                c_padding = hole_padding,
-                c_diameter = hole_diameter,
-                circle_sides = hole_sides
-            );
-
-        translate(fan_area_offset)
-            2d_40mm_fan_template();
-    }
+    translate(hole_area_margin)
+        2d_circle_grid(
+            dimensions = [
+                usable_area.x - (hole_area_margin.x * 2), 
+                usable_area.y - (hole_area_margin.y * 2)
+            ],
+            c_padding = hole_padding,
+            c_diameter = hole_diameter,
+            circle_sides = hole_sides
+        );
 }
 
 // Outer dimensions of the case
