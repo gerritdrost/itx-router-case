@@ -348,15 +348,20 @@ if ($preview) {
         inner_radius + mb_margin.x, 
         inner_radius + mb_margin.y, 
         base_thickness
-    ])
-    translate([0, 170, 0])
-        rotate(270)
-            union() {
-                translate([0, 0, mb_standoff_height])
-                    itx_board();
+    ]) {
+        translate([0, 170, 0]) rotate(270) {
+            translate([0, 0, mb_standoff_height])
+                itx_board();
 
-                m3_itx_standoffs(standoff_height = mb_standoff_height, screw_length = 6);
-            }
+            m3_itx_standoffs(standoff_height = mb_standoff_height, screw_length = 6);
+        }
+
+        // Area for wiring
+        color("#ff666633") translate([170, 0, 0]) cube([30, 170, 20]);
+    }
+
+
+
 }
 
 
